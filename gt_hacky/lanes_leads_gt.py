@@ -8,6 +8,7 @@ import numpy as np
 from tqdm import tqdm
 import onnxruntime as ort
 from os.path import exists
+import os
 
 MAX_DISTANCE = 140.
 LANE_OFFSET = 1.8
@@ -44,16 +45,29 @@ def frames_to_tensor(frames):
 
 def generate_ground_truth( camerafile, supercombo ):
   splits = camerafile.split('/')
-  path_to_video_file = '/'.join(splits[:-1])
+  segment_dir = '/'.join(splits[:-1])
   file_name = splits[-1]
 
-  if exists(path_to_video_file + '/marker_and_leads_ground_truth.npz' ):
-    print( "File already exist!" )
-    return
+  print('Segment:', segment_dir)
+
+  path_to_gt_file = os.path.join(segment_dir, 'marker_and_leads_ground_truth.npz')
+
+  if exists(path_to_gt_file):
+    # check if plan is larger than 1190
+    gt = np.load(path_to_gt_file)
+    if gt['plans'].shape[0] > 1190:
+      print( "File with a long enough plan already exists!" )
+      return
+    elif gt['plans'].shape[0] < 1000:
+      print( "File with very short plan already exists. Skipping" )
+      return
+    else:
+      print( "File exists but is not long enough. Overwriting it" )
+
   
   images = []
   try:  
-    images = get_train_imgs( path_to_segment=path_to_video_file, video_file=file_name )
+    images = get_train_imgs( path_to_segment=segment_dir, video_file=file_name )
   except Exception as e:
     print( "can't read images" )
     print(e)
@@ -118,10 +132,11 @@ def generate_ground_truth( camerafile, supercombo ):
     state = [recurrent_state]
 
   if not plans:
+    print('no plans outputted from the model!')
     return 
 
   try:
-    np.savez_compressed(path_to_video_file + '/marker_and_leads_ground_truth.npz',
+    np.savez_compressed(segment_dir + '/marker_and_leads_ground_truth.npz',
     plans=np.stack( plans ),
     plans_prob=np.stack( plans_prob ),
     lanelines=np.stack( lanelines ),

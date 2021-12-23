@@ -3,14 +3,19 @@ import onnxruntime as ort
 from lanes_leads_gt import generate_ground_truth
 import os
 
+data_basedir = '/home/nikita/data/'
+# data_basedir = '/gpfs/space/projects/Bolt/comma_recordings/realdata/'
+
 options = ort.SessionOptions() 
 options.intra_op_num_threads = 10 
 #options.inter_op_num_threads = 1
 
-supercombo = ort.InferenceSession('supercombo.onnx', providers=["CUDAExecutionProvider"], sess_options=options)
-text_files = glob.glob("/gpfs/space/projects/Bolt/comma_recordings/comma2k19/**/video.hevc", recursive = True)
+model = ort.InferenceSession('supercombo.onnx', providers=["CUDAExecutionProvider"], sess_options=options)
 
-for file in text_files:   
-    print( "In processing ...", file )
+video_paths = glob.glob(os.path.join(data_basedir, "**/video.hevc"), recursive = True)
+fcamera_paths = glob.glob(os.path.join(data_basedir, "**/fcamera.hevc"), recursive = True)
+
+for path_to_video in video_paths:   
+    print( "In processing ...", path_to_video )
    
-    generate_ground_truth( file, supercombo )
+    generate_ground_truth( path_to_video, model )

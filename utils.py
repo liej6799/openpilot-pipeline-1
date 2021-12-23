@@ -5,6 +5,7 @@ import numpy as np
 import math
 import os
 import cv2
+import tqdm
 #from tools.lib.logreader import LogReader
 
 
@@ -108,16 +109,14 @@ def reshape_yuv(frames):
 def load_frames(video_path):
     cap = cv2.VideoCapture(video_path)
     yuv_frames = []
-    index = 0
+    pbar = tqdm(total=1200, desc='Loading frames')
     while cap.isOpened():
-        index += 1
         ret, frame = cap.read()
         if not ret:
             break
 
+        pbar.update(1)
         yuv_frames.append(bgr_to_yuv(frame))
-        if index == 20:
-            return yuv_frames
 
     return yuv_frames
 
@@ -137,7 +136,7 @@ def bgr_to_yuv(img_bgr):
 
 def transform_frames(frames):
     imgs_med_model = np.zeros((len(frames), 384, 512), dtype=np.uint8)
-    for i, img in enumerate(frames):
+    for i, img in tqdm(enumerate(frames), total=len(frames), desc='Transforming frames'):
         imgs_med_model[i] = transform_img(img, 
                                           from_intr=eon_intrinsics,
                                           to_intr=medmodel_intrinsics, 
@@ -160,7 +159,7 @@ def get_train_imgs(path_to_segment, video_file='fcamera.hevc', gt_file='ground_t
     '''
 
     input_video = os.path.join(path_to_segment, video_file)
-    ground_truths_file = os.path.join(path_to_segment, gt_file)
+    # ground_truths_file = os.path.join(path_to_segment, gt_file)
 
     #if not os.path.exists(ground_truths_file):
     #    raise FileNotFoundError('Segment ground truths NOT FOUND: {}'.format(path_to_segment))
