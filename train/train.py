@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as topt
 from dataloader import CommaDataset, BatchDataLoader, BackgroundGenerator
 from torch.utils.data import DataLoader
-from model import *
+from custom_model import *
 from onnx2pytorch import ConvertModel
 import onnx
 import wandb
